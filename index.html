@@ -8,17 +8,14 @@
         :root { --primary: #FF9933; --dark: #2c3e50; --light: #fff5e6; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--light); color: #333; }
         
-        /* Header Section */
         header { background: var(--primary); color: white; text-align: center; padding: 50px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         header h1 { margin: 0; font-size: 36px; text-transform: uppercase; letter-spacing: 2px; }
         header p { margin: 10px 0 0; font-size: 20px; font-style: italic; opacity: 0.9; }
 
-        /* Search Bar Section */
         .search-container { position: sticky; top: 0; background: white; padding: 20px; text-align: center; box-shadow: 0 2px 15px rgba(0,0,0,0.1); z-index: 1000; }
         #searchInput { width: 90%; max-width: 700px; padding: 15px 25px; border: 2px solid var(--primary); border-radius: 50px; font-size: 18px; outline: none; transition: 0.3s; }
         #searchInput:focus { box-shadow: 0 0 10px rgba(255, 153, 51, 0.5); }
 
-        /* Results Grid */
         .content-wrapper { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
         #resultsGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
         
@@ -31,7 +28,6 @@
         .type-badge { display: inline-block; background: #eee; color: #666; font-size: 11px; padding: 3px 10px; border-radius: 5px; margin-bottom: 10px; text-transform: uppercase; font-weight: bold; }
         .date-text { display: block; margin-top: 10px; font-size: 13px; color: #999; }
 
-        /* Footer */
         footer { background: var(--dark); color: white; text-align: center; padding: 40px 20px; margin-top: 60px; }
         .footer-logo { font-size: 24px; color: var(--primary); font-weight: bold; margin-bottom: 10px; }
     </style>
@@ -48,8 +44,7 @@
 </div>
 
 <div class="content-wrapper">
-    <div id="resultsGrid">
-        </div>
+    <div id="resultsGrid"></div>
 </div>
 
 <footer>
@@ -61,27 +56,25 @@
 <script>
     let masterData = [];
 
-    // Load data from both JSON files simultaneously
     async function initSite() {
         try {
+            // Fetching from the 'data/' folder as per your setup
             const [postsResponse, pagesResponse] = await Promise.all([
-                fetch('posts.json'),
-                fetch('pages.json')
+                fetch('data/posts.json'),
+                fetch('data/pages.json')
             ]);
 
             const posts = await postsResponse.json();
             const pages = await pagesResponse.json();
 
-            // Tag each item to distinguish between Stotras and Pages
             const taggedPosts = posts.map(item => ({ ...item, contentType: 'Stotra' }));
             const taggedPages = pages.map(item => ({ ...item, contentType: 'Page' }));
 
-            // Merge everything into one searchable array
             masterData = [...taggedPosts, ...taggedPages];
             displayContent(masterData);
         } catch (error) {
-            console.error("Error loading JSON files:", error);
-            document.getElementById('resultsGrid').innerHTML = "<p>Failed to load content. Please ensure posts.json and pages.json exist.</p>";
+            console.error("Error loading JSON files from data folder:", error);
+            document.getElementById('resultsGrid').innerHTML = "<p>Error: Could not find posts.json or pages.json in the 'data' folder.</p>";
         }
     }
 
@@ -100,16 +93,16 @@
         const query = document.getElementById('searchInput').value.toLowerCase();
         const filtered = masterData.filter(item => {
             const titleMatch = item.title.toLowerCase().includes(query);
-            const keywordMatch = item.meta_keywords && item.meta_keywords.toLowerCase().includes(query);
+            const keywordMatch = (item.meta_keywords && item.meta_keywords.toLowerCase().includes(query)) || 
+                                 (item.keyword && item.keyword.toLowerCase().includes(query));
             const descMatch = (item.meta_description && item.meta_description.toLowerCase().includes(query)) || 
-                             (item.full_page_content && item.full_page_content.toLowerCase().includes(query));
+                             (item.description && item.description.toLowerCase().includes(query));
             
             return titleMatch || keywordMatch || descMatch;
         });
         displayContent(filtered);
     }
 
-    // Initialize the site
     initSite();
 </script>
 
