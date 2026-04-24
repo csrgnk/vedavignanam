@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Page</title>
+
+<style>
+body { font-family:Arial; padding:20px; background:#f5f5f5; }
+.container {
+    max-width:800px;
+    margin:auto;
+    background:white;
+    padding:20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1 id="title"></h1>
+    <div id="content"></div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const slug = params.get("slug");
+
+fetch('data/pages.json')
+.then(res=>res.json())
+.then(pages=>{
+    const page = pages.find(p=>p.url === slug);
+
+    if(!page){
+        window.location.href = "/404.html";
+        return;
+    }
+
+    document.title = page.title;
+    document.getElementById('title').innerText = page.title;
+    document.getElementById('content').innerHTML = page.full_page_content || "Content coming soon...";
+});
+</script>
+
+</body>
+</html>
