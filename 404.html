@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>404 - Page Not Found</title>
+
+<style>
+body {
+    margin:0;
+    font-family:Arial;
+    background:#111;
+    color:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    text-align:center;
+}
+.box { max-width:400px; }
+h1 { font-size:80px; color:#ff5252; margin:0; }
+a {
+    color:#00e5ff;
+    text-decoration:none;
+    font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+    <h1>404</h1>
+    <p>Page not found 🙏</p>
+    <a href="/">Go Home</a>
+</div>
+
+<!-- OPTIONAL AUTO REDIRECT -->
+<script>
+setTimeout(()=>{
+    window.location.href = "/";
+},5000);
+</script>
+
+</body>
+</html>
