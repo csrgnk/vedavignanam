@@ -1,35 +1,76 @@
 <!DOCTYPE html>
-<html lang="te">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Veda Vignanam - Veda Stotranidhi</title>
-    <style>
-        :root { --primary: #FF9933; --dark: #2c3e50; --light: #fff5e6; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--light); color: #333; }
-        
-        header { background: var(--primary); color: white; text-align: center; padding: 50px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        header h1 { margin: 0; font-size: 32px; text-transform: uppercase; }
-        header p { margin: 10px 0 0; font-size: 18px; font-style: italic; opacity: 0.9; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        .search-container { position: sticky; top: 0; background: white; padding: 20px; text-align: center; box-shadow: 0 2px 15px rgba(0,0,0,0.1); z-index: 1000; }
-        #searchInput { width: 90%; max-width: 700px; padding: 15px 25px; border: 2px solid var(--primary); border-radius: 50px; font-size: 18px; outline: none; }
+<title>Veda Vignanam - Veda Stotranidhi</title>
 
-        .content-wrapper { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
-        #resultsGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        
-        .result-card { background: white; padding: 25px; border-radius: 12px; text-decoration: none; color: #b35900; 
-                       box-shadow: 0 4px 8px rgba(0,0,0,0.05); border-bottom: 5px solid var(--primary); 
-                       transition: 0.3s; display: block; }
-        .result-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .result-card h3 { margin: 0; font-size: 19px; line-height: 1.4; }
-        
-        .type-badge { display: inline-block; background: #eee; color: #666; font-size: 10px; padding: 2px 8px; border-radius: 4px; margin-bottom: 10px; font-weight: bold; }
-        .date-text { display: block; margin-top: 10px; font-size: 12px; color: #999; }
+<style>
+body { margin:0; font-family:Arial; background:#f5f5f5; }
 
-        footer { background: var(--dark); color: white; text-align: center; padding: 40px 20px; margin-top: 60px; }
-    </style>
+/* HEADER */
+header {
+    background:#6a1b9a;
+    color:#fff;
+    padding:15px;
+    text-align:center;
+}
+
+/* MENU */
+nav {
+    background:#222;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+}
+nav a {
+    color:#fff;
+    padding:12px 16px;
+    text-decoration:none;
+}
+nav a:hover { background:#6a1b9a; }
+
+/* GRID */
+.container { padding:20px; }
+.grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:15px;
+}
+.card {
+    background:#fff;
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+.card img {
+    width:100%;
+    height:150px;
+    object-fit:cover;
+}
+.card h3 {
+    padding:10px;
+    font-size:15px;
+}
+
+/* PAGINATION */
+.pagination {
+    text-align:center;
+    margin:20px;
+}
+.pagination button {
+    padding:8px 12px;
+    margin:5px;
+    border:none;
+    background:#6a1b9a;
+    color:white;
+    cursor:pointer;
+}
+.pagination button.active { background:#222; }
+</style>
 </head>
+
 <body>
 
 <header>
@@ -37,72 +78,78 @@
     <p>Veda Stotranidhi</p>
 </header>
 
-<div class="search-container">
-    <input type="text" id="searchInput" placeholder="Search for Stotras or Keywords..." onkeyup="filterContent()">
+<nav id="menu"></nav>
+
+<div class="container">
+    <div class="grid" id="posts"></div>
 </div>
 
-<div class="content-wrapper">
-    <div id="resultsGrid"></div>
-</div>
-
-<footer>
-    <p>&copy; 2026 | Namo Narayanaya Bhakthi Channel</p>
-</footer>
+<div class="pagination" id="pagination"></div>
 
 <script>
-    let masterData = [];
+const postsPerPage = 25;
+let currentPage = 1;
+let allPosts = [];
 
-    async function initSite() {
-        try {
-            // Updated to look inside your 'data/' folder
-            const [postsResponse, pagesResponse] = await Promise.all([
-                fetch('data/posts.json'),
-                fetch('data/pages.json')
-            ]);
+/* LOAD MENU FROM pages.json */
+fetch('data/pages.json')
+.then(res => res.json())
+.then(data => {
+    const menu = document.getElementById('menu');
+    menu.innerHTML = `<a href="/">Home</a>`;
+    
+    data.forEach(page => {
+        menu.innerHTML += `<a href="${page.url}">${page.title}</a>`;
+    });
+});
 
-            const posts = await postsResponse.json();
-            const pages = await pagesResponse.json();
+/* LOAD POSTS */
+fetch('data/posts.json')
+.then(res => res.json())
+.then(data => {
+    // sort latest first
+    allPosts = data.sort((a,b)=> new Date(b.date)-new Date(a.date));
+    renderPosts();
+    renderPagination();
+});
 
-            // Tagging content types
-            const taggedPosts = posts.map(item => ({ ...item, contentType: 'Stotra' }));
-            const taggedPages = pages.map(item => ({ ...item, contentType: 'Page' }));
+function renderPosts() {
+    const start = (currentPage-1)*postsPerPage;
+    const end = start + postsPerPage;
+    const posts = allPosts.slice(start,end);
 
-            masterData = [...taggedPosts, ...taggedPages];
-            displayContent(masterData);
-        } catch (error) {
-            console.error("Error loading JSON:", error);
-            document.getElementById('resultsGrid').innerHTML = "<p>Please ensure data/posts.json and data/pages.json are uploaded.</p>";
-        }
-    }
+    const container = document.getElementById('posts');
+    container.innerHTML = '';
 
-    function displayContent(items) {
-        const grid = document.getElementById('resultsGrid');
-        grid.innerHTML = items.map(item => `
-            <a href="${item.url}" class="result-card">
-                <span class="type-badge">${item.contentType}</span>
-                <h3>${item.title}</h3>
-                <span class="date-text">${item.date || item.publish_date || ''}</span>
+    posts.forEach(post => {
+        container.innerHTML += `
+        <div class="card">
+            <a href="${post.url}">
+                <img src="images/default.jpg" alt="${post.title}">
+                <h3>${post.title}</h3>
             </a>
-        `).join('');
-    }
+        </div>`;
+    });
+}
 
-    function filterContent() {
-        const query = document.getElementById('searchInput').value.toLowerCase();
-        const filtered = masterData.filter(item => {
-            const titleMatch = item.title.toLowerCase().includes(query);
-            const keywordMatch = (item.keyword && item.keyword.toLowerCase().includes(query)) || 
-                                 (item.meta_keywords && item.meta_keywords.toLowerCase().includes(query));
-            
-            // Search inside description (full content) as well
-            const contentMatch = (item.description && item.description.toLowerCase().includes(query)) || 
-                                (item.full_page_content && item.full_page_content.toLowerCase().includes(query));
-            
-            return titleMatch || keywordMatch || contentMatch;
-        });
-        displayContent(filtered);
-    }
+function renderPagination() {
+    const totalPages = Math.ceil(allPosts.length/postsPerPage);
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
 
-    initSite();
+    for(let i=1;i<=totalPages;i++){
+        pagination.innerHTML += `
+        <button onclick="changePage(${i})" class="${i===currentPage?'active':''}">
+        ${i}
+        </button>`;
+    }
+}
+
+function changePage(page){
+    currentPage = page;
+    renderPosts();
+    renderPagination();
+}
 </script>
 
 </body>
